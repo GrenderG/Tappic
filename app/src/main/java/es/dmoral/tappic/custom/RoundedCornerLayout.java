@@ -1,4 +1,4 @@
-package es.dmoral.tooltipper.custom;
+package es.dmoral.tappic.custom;
 
 import android.content.Context;
 import android.graphics.*;

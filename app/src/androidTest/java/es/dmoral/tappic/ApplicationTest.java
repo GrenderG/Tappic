@@ -1,4 +1,4 @@
-package es.dmoral.tooltipper;
+package es.dmoral.tappic;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

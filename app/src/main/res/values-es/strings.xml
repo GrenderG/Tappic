@@ -1,0 +1,17 @@
+<resources>
+    <string name="download_image">Descargar imagen</string>
+    <string name="share_image">Compartir imagen</string>
+    <string name="share_image_text">Comparir con</string>
+    <string name="image_saved_text">Imagen guardada</string>
+    <string name="out_of_memory_text">La imagen es demasiado grande para previsualizar</string>
+    <string name="saving_image_text">Guardando imagen…</string>
+    <string name="error_saving_image_text">Error guardando imagen</string>
+    <string name="msg_onboard_0">Bienvenido a Tappic, ¡hagamos que converses más rápido!</string>
+    <string name="msg_onboard_1">Tan fácil como parece, un toque para abrir la pantalla completa, dos para eliminar la imagen.</string>
+    <string name="msg_onboard_2">Necesitamos dibujar encima de otras aplicaciones. Finaliza, busca Tappic y actívalo.</string>
+    <string name="title_onboard_0">¡Hola!</string>
+    <string name="title_onboard_1">¡Facilísimo!</string>
+    <string name="title_onboard_2">Finalmente…</string>
+    <string name="back_to_preview">Volver a miniatura</string>
+    <string name="loading_image">Cargando imagen…</string>
+</resources>

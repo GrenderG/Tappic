@@ -1,40 +1,41 @@
-package es.dmoral.tooltipper.services;
+package es.dmoral.tappic.services;
 
 import android.app.Service;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.Color;
-import android.graphics.Outline;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.BitmapDrawable;
-import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.IBinder;
-import android.os.SystemClock;
-import android.support.v4.content.ContextCompat;
-import android.util.DisplayMetrics;
+import android.support.v7.view.ContextThemeWrapper;
+import android.view.GestureDetector;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewOutlineProvider;
 import android.view.WindowManager;
-import android.widget.Button;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
-import es.dmoral.tooltipper.R;
-import es.dmoral.tooltipper.custom.RoundedCornerLayout;
-import es.dmoral.tooltipper.utils.InternetUtils;
+import es.dmoral.tappic.R;
+import es.dmoral.tappic.TooltipperApp;
+import es.dmoral.tappic.activities.DetailActivity;
+import es.dmoral.tappic.utils.Constants;
+import es.dmoral.tappic.utils.InternetUtils;
 
 public class TooltipperService extends Service {
 
     private WindowManager windowManager;
     private ImageView tooltipImage;
-    private RoundedCornerLayout tooltipContainer;
-    private Button deleteTooltipButton;
+    private LinearLayout tooltipContainer;
     private WindowManager.LayoutParams params;
+
+    private Animation deleteTooltipAnim;
+    private GestureDetector detector;
+    private String dataString;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -48,27 +49,16 @@ public class TooltipperService extends Service {
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 
-        tooltipContainer = new RoundedCornerLayout(this);
-        tooltipContainer.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT));
-        tooltipContainer.setOrientation(LinearLayout.VERTICAL);
-        ((LinearLayout.LayoutParams)tooltipContainer.getLayoutParams()).setMargins(16, 16, 16, 16);
-        tooltipContainer.setBackgroundColor(Color.LTGRAY);
-        
-        tooltipImage = new ImageView(this);
-        tooltipImage.setAdjustViewBounds(true);
+        ContextThemeWrapper ctx = new ContextThemeWrapper(this, R.style.TranslucentAppTheme);
+        tooltipContainer = (LinearLayout) LayoutInflater.from(ctx)
+                .inflate(R.layout.tooltip_layout, null);
 
-        deleteTooltipButton = new Button(this);
-        deleteTooltipButton.setText(R.string.delete_image);
-        deleteTooltipButton.setBackgroundColor(Color.RED);
-        deleteTooltipButton.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT));
-        ((LinearLayout.LayoutParams)deleteTooltipButton.getLayoutParams()).height = 80;
+        tooltipImage = (ImageView) tooltipContainer.findViewById(R.id.tooltip_image);
+        deleteTooltipAnim = AnimationUtils.loadAnimation(this, R.anim.delete_tooltip_anim);
 
-        tooltipContainer.addView(tooltipImage);
-        tooltipContainer.addView(deleteTooltipButton);
+        detector = new GestureDetector(this, new GestureTap());
 
-        tooltipContainer.setVisibility(View.GONE);
+        //fabDeleteImage = (FloatingActionButton) tooltipContainer.findViewById(R.id.fab_delete_image);
 
         this.params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -82,15 +72,19 @@ public class TooltipperService extends Service {
         windowManager.addView(tooltipContainer, params);
 
         setListeners();
-        System.out.println("ASDASDASD SERVICE");
 
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        String dataString = intent.getDataString();
+        dataString = intent.getDataString();
         if (dataString != null)
             new GetBitmapFromURLAsync().execute(dataString);
+        else if (TooltipperApp.getCurrentBitmap() != null) {
+            tooltipImage.setImageDrawable(new BitmapDrawable(getResources(), TooltipperApp.getCurrentBitmap()));
+            tooltipContainer.setVisibility(View.VISIBLE);
+        }
+
         return START_NOT_STICKY;
     }
 
@@ -104,15 +98,13 @@ public class TooltipperService extends Service {
 
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
+                detector.onTouchEvent(motionEvent);
                 switch (motionEvent.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         initialX = params.x;
                         initialY = params.y;
                         initialTouchX = motionEvent.getRawX();
                         initialTouchY = motionEvent.getRawY();
-                        System.out.println("ACTION DOWN");
-                        return true;
-                    case MotionEvent.ACTION_UP:
                         return true;
                     case MotionEvent.ACTION_MOVE:
                         params.x = initialX + (int) (motionEvent.getRawX() - initialTouchX);
@@ -124,10 +116,20 @@ public class TooltipperService extends Service {
             }
         });
 
-        deleteTooltipButton.setOnClickListener(new View.OnClickListener() {
+        deleteTooltipAnim.setAnimationListener(new Animation.AnimationListener() {
             @Override
-            public void onClick(View view) {
+            public void onAnimationStart(Animation animation) {
+                tooltipImage.setEnabled(false);
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
                 TooltipperService.this.stopSelf();
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
             }
         });
 
@@ -139,7 +141,33 @@ public class TooltipperService extends Service {
         if (tooltipImage != null) windowManager.removeView(tooltipContainer);
     }
 
+    private class GestureTap extends GestureDetector.SimpleOnGestureListener {
+        @Override
+        public boolean onDoubleTap(MotionEvent e) {
+            tooltipImage.startAnimation(deleteTooltipAnim);
+            return true;
+        }
+
+        @Override
+        public boolean onSingleTapConfirmed(MotionEvent e) {
+            tooltipImage.setVisibility(View.INVISIBLE);
+            Intent toDetailActivity = new Intent(TooltipperService.this, DetailActivity.class);
+            toDetailActivity.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            toDetailActivity.putExtra(Constants.CURRENT_URL_EXTRA, dataString);
+            startActivity(toDetailActivity);
+            TooltipperService.this.stopSelf();
+            return true;
+        }
+    }
+
     private class GetBitmapFromURLAsync extends AsyncTask<String, Void, Bitmap> {
+
+        Toast loadingImageToast = Toast.makeText(TooltipperService.this, R.string.loading_image, Toast.LENGTH_SHORT);
+
+        @Override
+        protected void onPreExecute() {
+            loadingImageToast.show();
+        }
 
         @Override
         protected Bitmap doInBackground(String... src) {
@@ -153,10 +181,13 @@ public class TooltipperService extends Service {
         @Override
         protected void onPostExecute(Bitmap bitmap) {
             if (bitmap != null) {
+                TooltipperApp.setCurrentBitmap(bitmap);
                 tooltipImage.setImageDrawable(new BitmapDrawable(getResources(), bitmap));
                 tooltipContainer.setVisibility(View.VISIBLE);
+                if (loadingImageToast != null)
+                    loadingImageToast.cancel();
             } else {
-                Toast.makeText(getApplicationContext(), "La imagen es demasiado grande para previsualizar.", Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), R.string.out_of_memory_text, Toast.LENGTH_LONG).show();
                 TooltipperService.this.stopSelf();
             }
         }

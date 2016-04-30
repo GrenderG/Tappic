@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<es.dmoral.tappic.custom.RoundedCornerLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tooltip_container"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:visibility="gone">
+
+    <ImageView
+        android:id="@+id/tooltip_image"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:scaleType="fitXY"
+        android:adjustViewBounds="true"/>
+
+</es.dmoral.tappic.custom.RoundedCornerLayout>
