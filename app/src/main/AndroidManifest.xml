@@ -28,7 +28,27 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data android:scheme="http" />
+                <data android:scheme="http"
+                    android:host="*"
+                    android:pathPattern=".*\\.jpg" />
+                <data android:scheme="http"
+                    android:host="*"
+                    android:pathPattern=".*\\.jpeg" />
+                <data android:scheme="http"
+                    android:host="*"
+                    android:pathPattern=".*\\.png" />
+                <data android:scheme="http"
+                    android:host="*"
+                    android:pathPattern=".*\\.bmp" />
+                <data android:scheme="http"
+                    android:host="*"
+                    android:pathPattern=".*\\.gif" />
+                <data android:scheme="http"
+                    android:host="*"
+                    android:pathPrefix="/image" />
+                <data android:scheme="http"
+                    android:host="*"
+                    android:pathPrefix="/images" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -36,7 +56,27 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data android:scheme="https" />
+                <data android:scheme="https"
+                    android:host="*"
+                    android:pathPattern=".*\\.jpg" />
+                <data android:scheme="https"
+                    android:host="*"
+                    android:pathPattern=".*\\.jpeg" />
+                <data android:scheme="https"
+                    android:host="*"
+                    android:pathPattern=".*\\.png" />
+                <data android:scheme="https"
+                    android:host="*"
+                    android:pathPattern=".*\\.bmp" />
+                <data android:scheme="https"
+                    android:host="*"
+                    android:pathPattern=".*\\.gif" />
+                <data android:scheme="https"
+                    android:host="*"
+                    android:pathPrefix="/image" />
+                <data android:scheme="https"
+                    android:host="*"
+                    android:pathPrefix="/images" />
             </intent-filter>
         </activity>
 
