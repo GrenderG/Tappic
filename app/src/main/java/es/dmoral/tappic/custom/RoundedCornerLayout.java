@@ -6,9 +6,10 @@ import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
 
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
-public class RoundedCornerLayout extends LinearLayout {
+public class RoundedCornerLayout extends FrameLayout {
     private final static float CORNER_RADIUS = 8.0f;
 
     private Bitmap maskBitmap;

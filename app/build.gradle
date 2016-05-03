@@ -8,8 +8,8 @@ android {
         applicationId "es.dmoral.tappic"
         minSdkVersion 14
         targetSdkVersion 23
-        versionCode 11
-        versionName "1.1"
+        versionCode 12
+        versionName "1.2"
     }
     buildTypes {
         release {
@@ -27,4 +27,6 @@ dependencies {
     compile 'com.android.support:support-v4:23.3.0'
     compile 'com.github.chrisbanes:PhotoView:1.2.6'
     compile 'com.github.chyrta:AndroidOnboarder:0.6'
+    compile 'com.facebook.fresco:fresco:0.10.0'
+    compile 'com.facebook.fresco:animated-gif:0.10.0'
 }

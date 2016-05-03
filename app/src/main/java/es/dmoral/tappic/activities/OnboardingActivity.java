@@ -1,12 +1,9 @@
 package es.dmoral.tappic.activities;
 
-import android.Manifest;
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.support.annotation.Nullable;
 
 import com.chyrta.onboarder.OnboarderActivity;
 import com.chyrta.onboarder.OnboarderPage;
@@ -43,12 +40,12 @@ public class OnboardingActivity extends OnboarderActivity {
             onboardingList.get(2).setBackgroundColor(R.color.onboarding_2);
         }
 
-        return  onboardingList;
+        return onboardingList;
     }
 
     @Override
     public void onFinishButtonPressed() {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (!Settings.canDrawOverlays(this)) {
                 Intent myIntent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
                 startActivity(myIntent);

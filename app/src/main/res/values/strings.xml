@@ -15,4 +15,5 @@
     <string name="title_onboard_2">Finally…</string>
     <string name="back_to_preview">Back to preview</string>
     <string name="loading_image">Loading image…</string>
+    <string name="gif_info" translatable="false">GIF</string>
 </resources>

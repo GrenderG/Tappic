@@ -17,12 +17,15 @@ import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import com.facebook.drawee.backends.pipeline.Fresco;
 
 import es.dmoral.tappic.R;
 import es.dmoral.tappic.TooltipperApp;
 import es.dmoral.tappic.activities.DetailActivity;
+import es.dmoral.tappic.custom.RoundedCornerLayout;
 import es.dmoral.tappic.utils.Constants;
 import es.dmoral.tappic.utils.InternetUtils;
 
@@ -30,8 +33,9 @@ public class TooltipperService extends Service {
 
     private WindowManager windowManager;
     private ImageView tooltipImage;
-    private LinearLayout tooltipContainer;
+    private RoundedCornerLayout tooltipContainer;
     private WindowManager.LayoutParams params;
+    private TextView gifInfo;
 
     private Animation deleteTooltipAnim;
     private GestureDetector detector;
@@ -47,16 +51,18 @@ public class TooltipperService extends Service {
     public void onCreate() {
         super.onCreate();
 
-        windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        Fresco.initialize(this);
+        this.windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 
         ContextThemeWrapper ctx = new ContextThemeWrapper(this, R.style.TranslucentAppTheme);
-        tooltipContainer = (LinearLayout) LayoutInflater.from(ctx)
+        this.tooltipContainer = (RoundedCornerLayout) LayoutInflater.from(ctx)
                 .inflate(R.layout.tooltip_layout, null);
 
-        tooltipImage = (ImageView) tooltipContainer.findViewById(R.id.tooltip_image);
-        deleteTooltipAnim = AnimationUtils.loadAnimation(this, R.anim.delete_tooltip_anim);
+        this.gifInfo = (TextView) tooltipContainer.findViewById(R.id.gif_info);
+        this.tooltipImage = (ImageView) tooltipContainer.findViewById(R.id.tooltip_image);
+        this.deleteTooltipAnim = AnimationUtils.loadAnimation(this, R.anim.delete_tooltip_anim);
 
-        detector = new GestureDetector(this, new GestureTap());
+        this.detector = new GestureDetector(this, new GestureTap());
 
         //fabDeleteImage = (FloatingActionButton) tooltipContainer.findViewById(R.id.fab_delete_image);
 
@@ -67,9 +73,9 @@ public class TooltipperService extends Service {
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT);
 
-        params.gravity = Gravity.CENTER;
+        this.params.gravity = Gravity.CENTER;
 
-        windowManager.addView(tooltipContainer, params);
+        this.windowManager.addView(tooltipContainer, params);
 
         setListeners();
 
@@ -77,19 +83,16 @@ public class TooltipperService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        dataString = intent.getDataString();
-        if (dataString != null)
-            new GetBitmapFromURLAsync().execute(dataString);
-        else if (TooltipperApp.getCurrentBitmap() != null) {
-            tooltipImage.setImageDrawable(new BitmapDrawable(getResources(), TooltipperApp.getCurrentBitmap()));
-            tooltipContainer.setVisibility(View.VISIBLE);
+        this.dataString = intent.getDataString();
+        if (this.dataString != null) {
+            new GetBitmapFromURLAsync().execute(this.dataString);
         }
 
         return START_NOT_STICKY;
     }
 
     private void setListeners() {
-        tooltipImage.setOnTouchListener(new View.OnTouchListener() {
+        this.tooltipImage.setOnTouchListener(new View.OnTouchListener() {
 
             private int initialX;
             private int initialY;
@@ -116,9 +119,10 @@ public class TooltipperService extends Service {
             }
         });
 
-        deleteTooltipAnim.setAnimationListener(new Animation.AnimationListener() {
+        this.deleteTooltipAnim.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationStart(Animation animation) {
+                gifInfo.setVisibility(View.GONE);
                 tooltipImage.setEnabled(false);
             }
 
@@ -138,7 +142,7 @@ public class TooltipperService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (tooltipImage != null) windowManager.removeView(tooltipContainer);
+        if (this.tooltipContainer != null) this.windowManager.removeView(this.tooltipContainer);
     }
 
     private class GestureTap extends GestureDetector.SimpleOnGestureListener {
@@ -150,7 +154,7 @@ public class TooltipperService extends Service {
 
         @Override
         public boolean onSingleTapConfirmed(MotionEvent e) {
-            tooltipImage.setVisibility(View.INVISIBLE);
+            tooltipContainer.setVisibility(View.INVISIBLE);
             Intent toDetailActivity = new Intent(TooltipperService.this, DetailActivity.class);
             toDetailActivity.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             toDetailActivity.putExtra(Constants.CURRENT_URL_EXTRA, dataString);
@@ -162,17 +166,19 @@ public class TooltipperService extends Service {
 
     private class GetBitmapFromURLAsync extends AsyncTask<String, Void, Bitmap> {
 
-        Toast loadingImageToast = Toast.makeText(TooltipperService.this, R.string.loading_image, Toast.LENGTH_SHORT);
+        private Toast loadingImageToast = Toast.makeText(TooltipperService.this, R.string.loading_image, Toast.LENGTH_SHORT);
+        private String currentUrl;
 
         @Override
         protected void onPreExecute() {
-            loadingImageToast.show();
+            this.loadingImageToast.show();
         }
 
         @Override
         protected Bitmap doInBackground(String... src) {
             try {
-                return InternetUtils.getBitmapFromURL(src[0]);
+                this.currentUrl = src[0];
+                return InternetUtils.getBitmapFromURL(currentUrl);
             } catch (java.lang.OutOfMemoryError ome) {
                 return null;
             }
@@ -184,6 +190,8 @@ public class TooltipperService extends Service {
                 TooltipperApp.setCurrentBitmap(bitmap);
                 tooltipImage.setImageDrawable(new BitmapDrawable(getResources(), bitmap));
                 tooltipContainer.setVisibility(View.VISIBLE);
+                if (currentUrl.contains(".gif"))
+                    gifInfo.setVisibility(View.VISIBLE);
                 if (loadingImageToast != null)
                     loadingImageToast.cancel();
             } else {

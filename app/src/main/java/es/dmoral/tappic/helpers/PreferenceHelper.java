@@ -105,7 +105,8 @@ public class PreferenceHelper {
         for (int i = 0; i < st.size(); i++) {
             try {
                 toReturn.add(Integer.parseInt(st.get(i)));
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
         return toReturn;
     }

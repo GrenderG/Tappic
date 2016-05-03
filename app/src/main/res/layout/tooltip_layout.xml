@@ -13,4 +13,16 @@
         android:scaleType="fitXY"
         android:adjustViewBounds="true"/>
 
+    <TextView
+        android:id="@+id/gif_info"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="4dp"
+        android:background="@drawable/textview_bottom_start_rounded"
+        android:textStyle="bold"
+        android:textColor="@android:color/white"
+        android:layout_gravity="top|end"
+        android:visibility="gone"
+        android:text="@string/gif_info"/>
+
 </es.dmoral.tappic.custom.RoundedCornerLayout>

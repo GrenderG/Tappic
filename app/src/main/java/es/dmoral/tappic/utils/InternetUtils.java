@@ -10,6 +10,7 @@ import android.net.Uri;
 import android.os.Environment;
 
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -44,39 +45,29 @@ public class InternetUtils {
         }
     }
 
-    public static boolean storeImage(Context context, Bitmap imageData, String filename) {
-        //get path to external storage (SD card)
-        String iconsStoragePath = Environment.getExternalStorageDirectory().toString();
-        File sdIconStorageDir = new File(iconsStoragePath + "/Pictures");
-
-        //create storage directories, if they don't exist
-        sdIconStorageDir.mkdirs();
-
+    public static byte[] getBytesFromUrl(String src) throws java.lang.OutOfMemoryError {
         try {
-            File fileDir = new File(sdIconStorageDir.toString(), filename);
-            FileOutputStream fileOutputStream = new FileOutputStream(fileDir);
-
-            BufferedOutputStream bos = new BufferedOutputStream(fileOutputStream);
-
-            //choose another format if PNG doesn't suit you
-            imageData.compress(Bitmap.CompressFormat.PNG, 100, bos);
-
-            bos.flush();
-            bos.close();
-
-            MediaScannerConnection.scanFile(context, new String[] { fileDir.toString() }, null,
-                    new MediaScannerConnection.OnScanCompletedListener() {
-                        public void onScanCompleted(String path, Uri uri) {
-                        }
-                    });
-
-        } catch (FileNotFoundException e) {
-            return false;
+            java.net.URL url = new java.net.URL(src);
+            HttpURLConnection connection = (HttpURLConnection) url
+                    .openConnection();
+            connection.setDoInput(true);
+            connection.connect();
+            InputStream input = connection.getInputStream();
+            return readBytesFromInput(input);
         } catch (IOException e) {
-            return false;
+            e.printStackTrace();
+            return null;
         }
+    }
 
-        return true;
+    private static byte[] readBytesFromInput(InputStream input) throws IOException {
+        byte[] buffer = new byte[8192];
+        int bytesRead;
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        while ((bytesRead = input.read(buffer)) != -1) {
+            output.write(buffer, 0, bytesRead);
+        }
+        return output.toByteArray();
     }
 
 }

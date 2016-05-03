@@ -2,10 +2,11 @@
 <resources>
     <color name="colorPrimary">@android:color/black</color>
     <color name="colorPrimaryDark">@android:color/black</color>
-    <color name="colorAccent">@null</color>
 
     <color name="onboarding_0">#455A64</color>
     <color name="onboarding_1">#37474F</color>
     <color name="onboarding_2">#263238</color>
+
+    <color name="gif_info_bg">#B71C1C</color>
 
 </resources>

@@ -14,6 +14,16 @@
         android:id="@+id/full_tooltip_image"
         android:layout_centerInParent="true"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:visibility="gone"/>
+
+    <com.facebook.drawee.view.SimpleDraweeView
+        android:id="@+id/full_tooltip_gif"
+        android:layout_centerInParent="true"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:actualImageScaleType="fitCenter"
+        android:visibility="gone"/>
 
 </RelativeLayout>

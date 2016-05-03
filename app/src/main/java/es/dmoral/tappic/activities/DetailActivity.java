@@ -20,11 +20,16 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import com.facebook.drawee.backends.pipeline.Fresco;
+import com.facebook.drawee.interfaces.DraweeController;
+import com.facebook.drawee.view.SimpleDraweeView;
+
 import es.dmoral.tappic.R;
 import es.dmoral.tappic.TooltipperApp;
 import es.dmoral.tappic.services.TooltipperService;
 import es.dmoral.tappic.utils.Constants;
 import es.dmoral.tappic.utils.InternetUtils;
+import es.dmoral.tappic.utils.StorageUtils;
 import es.dmoral.tappic.utils.TooltipperUtils;
 import uk.co.senab.photoview.PhotoViewAttacher;
 
@@ -32,20 +37,26 @@ public class DetailActivity extends AppCompatActivity {
 
     private static final int REQUEST_WRITE_STORAGE = 112;
     private Toolbar toolbar;
+    private SimpleDraweeView fullTooltipGif;
     private ImageView fullTooltipImage;
     private RelativeLayout fullTooltipContainer;
+
+    private String imageUrl;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
+        this.imageUrl = getIntent().getStringExtra(Constants.CURRENT_URL_EXTRA);
 
         initViews();
         setupViews();
+
     }
 
     private void initViews() {
         this.toolbar = (Toolbar) findViewById(R.id.toolbar);
+        this.fullTooltipGif = (SimpleDraweeView) findViewById(R.id.full_tooltip_gif);
         this.fullTooltipImage = (ImageView) findViewById(R.id.full_tooltip_image);
         this.fullTooltipContainer = (RelativeLayout) findViewById(R.id.full_tooltip_container);
     }
@@ -54,11 +65,22 @@ public class DetailActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        fullTooltipImage.setImageDrawable(new BitmapDrawable(getResources(), TooltipperApp.getCurrentBitmap()));
-        new PhotoViewAttacher(fullTooltipImage);
+        if (this.imageUrl.contains(".gif")) {
+            this.fullTooltipGif.setVisibility(View.VISIBLE);
+            this.fullTooltipGif.setImageURI(Uri.parse(imageUrl));
+            DraweeController controller = Fresco.newDraweeControllerBuilder()
+                    .setUri(Uri.parse(imageUrl))
+                    .setAutoPlayAnimations(true)
+                    .build();
+            this.fullTooltipGif.setController(controller);
+        } else {
+            this.fullTooltipImage.setVisibility(View.VISIBLE);
+            this.fullTooltipImage.setImageDrawable(new BitmapDrawable(getResources(), TooltipperApp.getCurrentBitmap()));
+            final PhotoViewAttacher photoViewAttacher = new PhotoViewAttacher(this.fullTooltipImage);
+        }
 
-        toolbar.setTitleTextColor(Color.BLACK);
-        fullTooltipContainer.setBackgroundColor(Color.BLACK);
+        this.toolbar.setTitleTextColor(Color.BLACK);
+        this.fullTooltipContainer.setBackgroundColor(Color.BLACK);
     }
 
     @Override
@@ -70,7 +92,7 @@ public class DetailActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
 
-        switch(item.getItemId()) {
+        switch (item.getItemId()) {
             case R.id.action_download:
                 downloadImage();
                 return true;
@@ -91,9 +113,7 @@ public class DetailActivity extends AppCompatActivity {
     private void backToPreview() {
         onBackPressed();
         final Intent launchServiceIntent = new Intent(this, TooltipperService.class);
-        TooltipperApp.setCurrentBitmap(((BitmapDrawable)fullTooltipImage.getDrawable()).getBitmap());
-        launchServiceIntent.setData(Uri.parse(getIntent()
-                .getStringExtra(Constants.CURRENT_URL_EXTRA)));
+        launchServiceIntent.setData(Uri.parse(this.imageUrl));
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -106,7 +126,7 @@ public class DetailActivity extends AppCompatActivity {
     private void shareImage() {
         Intent share = new Intent(android.content.Intent.ACTION_SEND);
         share.setType("text/plain");
-        share.putExtra(Intent.EXTRA_TEXT, getIntent().getStringExtra(Constants.CURRENT_URL_EXTRA));
+        share.putExtra(Intent.EXTRA_TEXT, imageUrl);
         startActivity(Intent.createChooser(share, getString(R.string.share_image_text)));
     }
 
@@ -118,15 +138,19 @@ public class DetailActivity extends AppCompatActivity {
                     REQUEST_WRITE_STORAGE);
         } else {
             Toast.makeText(DetailActivity.this, R.string.saving_image_text, Toast.LENGTH_SHORT).show();
-            final String fileName = TooltipperUtils.getStringFromRegex(getIntent()
-                    .getStringExtra(Constants.CURRENT_URL_EXTRA), Constants.TEXT_AFTER_SLASH_REGEX) + ".png";
+            final String fileName = TooltipperUtils.getStringFromRegex(imageUrl, Constants.TEXT_AFTER_SLASH_REGEX) +
+                    (this.imageUrl.contains(".gif") ? ".gif" : ".png");
             new Thread(new Runnable() {
                 Toast downloadingImageToast = Toast.makeText(DetailActivity.this, R.string.saving_image_text, Toast.LENGTH_SHORT);
 
                 @Override
                 public void run() {
-                    downloadingImageToast.show();
-                    final boolean isImageSaved = InternetUtils.storeImage(DetailActivity.this, TooltipperApp.getCurrentBitmap(), fileName);
+                    this.downloadingImageToast.show();
+                    final boolean isImageSaved;
+                    if (fileName.endsWith(".png"))
+                        isImageSaved = StorageUtils.storeImage(DetailActivity.this, InternetUtils.getBitmapFromURL(imageUrl), fileName);
+                    else
+                        isImageSaved = StorageUtils.storeGif(DetailActivity.this, InternetUtils.getBytesFromUrl(imageUrl), fileName);
                     DetailActivity.this.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
