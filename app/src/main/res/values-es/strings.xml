@@ -14,4 +14,7 @@
     <string name="title_onboard_2">Finalmente…</string>
     <string name="back_to_preview">Volver a miniatura</string>
     <string name="loading_image">Cargando imagen…</string>
+    <string name="clear_cache">Limpiar caché</string>
+    <string name="cache_cleared_text">Caché limpiado</string>
+    <string name="write_permission_error">Necesitas conceder permisos de escritura para guardar la imagen</string>
 </resources>

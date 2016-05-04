@@ -1,10 +1,15 @@
 package es.dmoral.tappic.activities;
 
 import android.Manifest;
+import android.app.DownloadManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Color;
-import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Animatable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -17,19 +22,24 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.GlideDrawable;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 import com.facebook.drawee.backends.pipeline.Fresco;
+import com.facebook.drawee.controller.ControllerListener;
 import com.facebook.drawee.interfaces.DraweeController;
 import com.facebook.drawee.view.SimpleDraweeView;
+import com.facebook.imagepipeline.image.ImageInfo;
 
 import es.dmoral.tappic.R;
-import es.dmoral.tappic.TooltipperApp;
 import es.dmoral.tappic.services.TooltipperService;
 import es.dmoral.tappic.utils.Constants;
 import es.dmoral.tappic.utils.InternetUtils;
-import es.dmoral.tappic.utils.StorageUtils;
 import es.dmoral.tappic.utils.TooltipperUtils;
 import uk.co.senab.photoview.PhotoViewAttacher;
 
@@ -40,14 +50,22 @@ public class DetailActivity extends AppCompatActivity {
     private SimpleDraweeView fullTooltipGif;
     private ImageView fullTooltipImage;
     private RelativeLayout fullTooltipContainer;
+    private ProgressBar progressBar;
 
     private String imageUrl;
+
+    private DownloadManager downloadManager;
+    private BroadcastReceiver onDownloadCompletedReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Fresco.initialize(this);
+
         setContentView(R.layout.activity_detail);
+
         this.imageUrl = getIntent().getStringExtra(Constants.CURRENT_URL_EXTRA);
+        this.downloadManager = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
 
         initViews();
         setupViews();
@@ -59,6 +77,7 @@ public class DetailActivity extends AppCompatActivity {
         this.fullTooltipGif = (SimpleDraweeView) findViewById(R.id.full_tooltip_gif);
         this.fullTooltipImage = (ImageView) findViewById(R.id.full_tooltip_image);
         this.fullTooltipContainer = (RelativeLayout) findViewById(R.id.full_tooltip_container);
+        this.progressBar = (ProgressBar) findViewById(R.id.progress_bar);
     }
 
     private void setupViews() {
@@ -66,17 +85,65 @@ public class DetailActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         if (this.imageUrl.contains(".gif")) {
-            this.fullTooltipGif.setVisibility(View.VISIBLE);
+            this.progressBar.setVisibility(View.VISIBLE);
+            this.fullTooltipImage.setVisibility(View.GONE);
             this.fullTooltipGif.setImageURI(Uri.parse(imageUrl));
             DraweeController controller = Fresco.newDraweeControllerBuilder()
+                    .setControllerListener(new ControllerListener<ImageInfo>() {
+                        @Override
+                        public void onSubmit(String id, Object callerContext) {
+
+                        }
+
+                        @Override
+                        public void onFinalImageSet(String id, ImageInfo imageInfo, Animatable animatable) {
+                            progressBar.setVisibility(View.INVISIBLE);
+                        }
+
+                        @Override
+                        public void onIntermediateImageSet(String id, ImageInfo imageInfo) {
+
+                        }
+
+                        @Override
+                        public void onIntermediateImageFailed(String id, Throwable throwable) {
+
+                        }
+
+                        @Override
+                        public void onFailure(String id, Throwable throwable) {
+
+                        }
+
+                        @Override
+                        public void onRelease(String id) {
+
+                        }
+                    })
                     .setUri(Uri.parse(imageUrl))
                     .setAutoPlayAnimations(true)
                     .build();
             this.fullTooltipGif.setController(controller);
         } else {
-            this.fullTooltipImage.setVisibility(View.VISIBLE);
-            this.fullTooltipImage.setImageDrawable(new BitmapDrawable(getResources(), TooltipperApp.getCurrentBitmap()));
-            final PhotoViewAttacher photoViewAttacher = new PhotoViewAttacher(this.fullTooltipImage);
+            this.progressBar.setVisibility(View.VISIBLE);
+            this.fullTooltipGif.setVisibility(View.GONE);
+            Glide.with(this)
+                    .load(this.imageUrl)
+                    .listener(new RequestListener<String, GlideDrawable>() {
+                        @Override
+                        public boolean onException(Exception e, String model, Target<GlideDrawable> target, boolean isFirstResource) {
+                            return false;
+                        }
+
+                        @Override
+                        public boolean onResourceReady(GlideDrawable resource, String model, Target<GlideDrawable> target, boolean isFromMemoryCache, boolean isFirstResource) {
+                            new PhotoViewAttacher(fullTooltipImage);
+                            progressBar.setVisibility(View.INVISIBLE);
+                            return false;
+                        }
+                    })
+                    .into(this.fullTooltipImage);
+
         }
 
         this.toolbar.setTitleTextColor(Color.BLACK);
@@ -101,6 +168,22 @@ public class DetailActivity extends AppCompatActivity {
                 return true;
             case R.id.action_flip_back:
                 backToPreview();
+                break;
+            case R.id.clear_cache:
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Fresco.getImagePipeline().clearCaches();
+                        Glide.get(DetailActivity.this).clearDiskCache();
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Glide.get(DetailActivity.this).clearMemory();
+                                Toast.makeText(DetailActivity.this, R.string.cache_cleared_text, Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+                }).start();
                 break;
             case android.R.id.home:
                 onBackPressed();
@@ -137,31 +220,58 @@ public class DetailActivity extends AppCompatActivity {
                     new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
                     REQUEST_WRITE_STORAGE);
         } else {
-            Toast.makeText(DetailActivity.this, R.string.saving_image_text, Toast.LENGTH_SHORT).show();
+            this.progressBar.setVisibility(View.VISIBLE);
             final String fileName = TooltipperUtils.getStringFromRegex(imageUrl, Constants.TEXT_AFTER_SLASH_REGEX) +
-                    (this.imageUrl.contains(".gif") ? ".gif" : ".png");
-            new Thread(new Runnable() {
-                Toast downloadingImageToast = Toast.makeText(DetailActivity.this, R.string.saving_image_text, Toast.LENGTH_SHORT);
+                    (this.imageUrl.endsWith(".gif") ? ".gif" : ".png");
+            if (this.onDownloadCompletedReceiver == null)
+                this.onDownloadCompletedReceiver = new BroadcastReceiver() {
+                    @Override
+                    public void onReceive(Context context, Intent intent) {
+                        if (intent.getAction().equals(DownloadManager.ACTION_DOWNLOAD_COMPLETE)) {
+                            DownloadManager.Query query = new DownloadManager.Query();
+                            Cursor cursor = downloadManager.query(query);
+                            boolean downloadError = false;
+                            if (cursor.moveToFirst()) {
+                                int status = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS));
+                                switch (status) {
+                                    case DownloadManager.STATUS_SUCCESSFUL:
+                                        progressBar.setVisibility(View.INVISIBLE);
+                                        break;
+                                    case DownloadManager.STATUS_PENDING:
+                                    case DownloadManager.STATUS_RUNNING:
+                                    case DownloadManager.STATUS_PAUSED:
+                                        break;
+                                    default:
+                                        downloadError = true;
+                                }
+                            } else
+                                downloadError = true;
 
-                @Override
-                public void run() {
-                    this.downloadingImageToast.show();
-                    final boolean isImageSaved;
-                    if (fileName.endsWith(".png"))
-                        isImageSaved = StorageUtils.storeImage(DetailActivity.this, InternetUtils.getBitmapFromURL(imageUrl), fileName);
-                    else
-                        isImageSaved = StorageUtils.storeGif(DetailActivity.this, InternetUtils.getBytesFromUrl(imageUrl), fileName);
-                    DetailActivity.this.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (downloadingImageToast != null)
-                                downloadingImageToast.setText(isImageSaved ?
-                                        R.string.image_saved_text : R.string.error_saving_image_text);
+                            if (downloadError) {
+                                progressBar.setVisibility(View.INVISIBLE);
+                                Toast.makeText(DetailActivity.this,
+                                        R.string.error_saving_image_text, Toast.LENGTH_SHORT).show();
+                            }
                         }
-                    });
-                }
-            }).start();
+                    }
+                };
+            registerReceiver(this.onDownloadCompletedReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+            InternetUtils.downloadFileFromUrl(this.imageUrl, Constants.DOWNLOAD_FOLDER, fileName, this.downloadManager);
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (onDownloadCompletedReceiver != null)
+            registerReceiver(onDownloadCompletedReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (onDownloadCompletedReceiver != null)
+            unregisterReceiver(onDownloadCompletedReceiver);
     }
 
     @Override
@@ -171,8 +281,9 @@ public class DetailActivity extends AppCompatActivity {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
                     downloadImage();
                 else
-                    Toast.makeText(this, "You need to give write permissions in order to save the image", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, R.string.write_permission_error, Toast.LENGTH_LONG).show();
                 break;
         }
     }
+
 }

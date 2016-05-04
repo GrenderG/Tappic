@@ -2,11 +2,13 @@ package es.dmoral.tappic.utils;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Environment;
 
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -31,7 +33,6 @@ public class StorageUtils {
 
             BufferedOutputStream bos = new BufferedOutputStream(fileOutputStream);
 
-            //choose another format if PNG doesn't suit you
             imageData.compress(Bitmap.CompressFormat.PNG, 100, bos);
 
             bos.flush();
@@ -84,6 +85,16 @@ public class StorageUtils {
         }
 
         return true;
+    }
+
+    public static byte[] bitmapToByteArray(Bitmap bitmap) {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, bos);
+        return bos.toByteArray();
+    }
+
+    public static Bitmap byteArrayToBitmap(byte[] byteArray) {
+        return BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
     }
 
 }

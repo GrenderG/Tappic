@@ -1,13 +1,17 @@
 package es.dmoral.tappic.custom;
 
 import android.content.Context;
-import android.graphics.*;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
+import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
-
 import android.widget.FrameLayout;
-import android.widget.LinearLayout;
 
 public class RoundedCornerLayout extends FrameLayout {
     private final static float CORNER_RADIUS = 8.0f;

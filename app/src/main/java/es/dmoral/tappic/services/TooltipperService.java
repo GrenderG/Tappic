@@ -1,10 +1,12 @@
 package es.dmoral.tappic.services;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.PixelFormat;
-import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.IBinder;
 import android.support.v7.view.ContextThemeWrapper;
@@ -20,14 +22,22 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.GlideDrawable;
+import com.bumptech.glide.request.FutureTarget;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.request.target.Target;
 import com.facebook.drawee.backends.pipeline.Fresco;
 
+import java.io.File;
+
 import es.dmoral.tappic.R;
-import es.dmoral.tappic.TooltipperApp;
 import es.dmoral.tappic.activities.DetailActivity;
 import es.dmoral.tappic.custom.RoundedCornerLayout;
 import es.dmoral.tappic.utils.Constants;
-import es.dmoral.tappic.utils.InternetUtils;
+import es.dmoral.tappic.utils.StorageUtils;
 
 public class TooltipperService extends Service {
 
@@ -52,6 +62,7 @@ public class TooltipperService extends Service {
         super.onCreate();
 
         Fresco.initialize(this);
+
         this.windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 
         ContextThemeWrapper ctx = new ContextThemeWrapper(this, R.style.TranslucentAppTheme);
@@ -63,8 +74,6 @@ public class TooltipperService extends Service {
         this.deleteTooltipAnim = AnimationUtils.loadAnimation(this, R.anim.delete_tooltip_anim);
 
         this.detector = new GestureDetector(this, new GestureTap());
-
-        //fabDeleteImage = (FloatingActionButton) tooltipContainer.findViewById(R.id.fab_delete_image);
 
         this.params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -85,7 +94,30 @@ public class TooltipperService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         this.dataString = intent.getDataString();
         if (this.dataString != null) {
-            new GetBitmapFromURLAsync().execute(this.dataString);
+            //new GetCacheTask(this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, this.dataString);
+            final Toast loadingImage = Toast.makeText(TooltipperService.this, R.string.loading_image, Toast.LENGTH_SHORT);
+            loadingImage.show();
+            Glide.with(TooltipperService.this)
+                    .load(dataString)
+                    .asBitmap()
+                    .into(new SimpleTarget<Bitmap>() {
+                        @Override
+                        public void onLoadFailed(Exception e, Drawable errorDrawable) {
+                            loadingImage.cancel();
+                            Toast.makeText(getApplicationContext(), R.string.out_of_memory_text, Toast.LENGTH_LONG).show();
+                            TooltipperService.this.stopSelf();
+                        }
+
+                        @Override
+                        public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+                            tooltipImage.setImageBitmap(resource);
+                            if (dataString.endsWith(".gif")) {
+                                gifInfo.setVisibility(View.VISIBLE);
+                            }
+                            loadingImage.cancel();
+
+                        }
+                    });
         }
 
         return START_NOT_STICKY;
@@ -161,43 +193,6 @@ public class TooltipperService extends Service {
             startActivity(toDetailActivity);
             TooltipperService.this.stopSelf();
             return true;
-        }
-    }
-
-    private class GetBitmapFromURLAsync extends AsyncTask<String, Void, Bitmap> {
-
-        private Toast loadingImageToast = Toast.makeText(TooltipperService.this, R.string.loading_image, Toast.LENGTH_SHORT);
-        private String currentUrl;
-
-        @Override
-        protected void onPreExecute() {
-            this.loadingImageToast.show();
-        }
-
-        @Override
-        protected Bitmap doInBackground(String... src) {
-            try {
-                this.currentUrl = src[0];
-                return InternetUtils.getBitmapFromURL(currentUrl);
-            } catch (java.lang.OutOfMemoryError ome) {
-                return null;
-            }
-        }
-
-        @Override
-        protected void onPostExecute(Bitmap bitmap) {
-            if (bitmap != null) {
-                TooltipperApp.setCurrentBitmap(bitmap);
-                tooltipImage.setImageDrawable(new BitmapDrawable(getResources(), bitmap));
-                tooltipContainer.setVisibility(View.VISIBLE);
-                if (currentUrl.contains(".gif"))
-                    gifInfo.setVisibility(View.VISIBLE);
-                if (loadingImageToast != null)
-                    loadingImageToast.cancel();
-            } else {
-                Toast.makeText(getApplicationContext(), R.string.out_of_memory_text, Toast.LENGTH_LONG).show();
-                TooltipperService.this.stopSelf();
-            }
         }
     }
 

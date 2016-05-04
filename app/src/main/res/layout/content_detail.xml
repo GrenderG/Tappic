@@ -10,20 +10,30 @@
     tools:context="es.dmoral.tappic.activities.DetailActivity"
     tools:showIn="@layout/activity_detail">
 
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:indeterminate="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:visibility="invisible" >
+    </ProgressBar>
+
     <ImageView
         android:id="@+id/full_tooltip_image"
         android:layout_centerInParent="true"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scaleType="fitXY"
-        android:visibility="gone"/>
+        android:layout_below="@id/progress_bar"
+        android:scaleType="fitCenter"/>
 
     <com.facebook.drawee.view.SimpleDraweeView
         android:id="@+id/full_tooltip_gif"
         android:layout_centerInParent="true"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:actualImageScaleType="fitCenter"
-        android:visibility="gone"/>
+        android:layout_below="@id/progress_bar"
+        app:actualImageScaleType="fitCenter"/>
 
 </RelativeLayout>

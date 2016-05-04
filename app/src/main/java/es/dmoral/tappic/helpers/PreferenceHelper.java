@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import es.dmoral.tappic.TooltipperApp;
-
 /**
  * Created by Daniel Morales (GrenderG)
  * on 26/03/15.

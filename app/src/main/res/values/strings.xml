@@ -16,4 +16,7 @@
     <string name="back_to_preview">Back to preview</string>
     <string name="loading_image">Loading image…</string>
     <string name="gif_info" translatable="false">GIF</string>
+    <string name="clear_cache">Clear cache</string>
+    <string name="cache_cleared_text">Cache cleared</string>
+    <string name="write_permission_error">You need to give write permissions in order to save the image</string>
 </resources>
