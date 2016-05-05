@@ -29,10 +29,6 @@ public class InternetUtils {
     }
 
     public static void downloadFileFromUrl(String url, String path, String fileName, DownloadManager downloadManager) {
-        File outputFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath());
-        if (!outputFile.exists())
-            outputFile.mkdirs();
-
         Uri downloadUri = Uri.parse(url);
         DownloadManager.Request request = new DownloadManager.Request(downloadUri);
 
