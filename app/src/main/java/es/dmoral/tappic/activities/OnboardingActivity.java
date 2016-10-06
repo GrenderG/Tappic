@@ -11,8 +11,9 @@ import com.chyrta.onboarder.OnboarderPage;
 import java.util.ArrayList;
 import java.util.List;
 
+import es.dmoral.prefs.Prefs;
 import es.dmoral.tappic.R;
-import es.dmoral.tappic.helpers.PreferenceHelper;
+import es.dmoral.tappic.utils.Constants;
 
 /**
  * Created by grender on 30/04/16.
@@ -51,8 +52,7 @@ public class OnboardingActivity extends OnboarderActivity {
                 startActivity(myIntent);
             }
         }
-        if (PreferenceHelper.isPrefsInitialized())
-            PreferenceHelper.writeBoolean(PreferenceHelper.PREF_FIRST_BOOT, false);
+        Prefs.with(this).writeBoolean(Constants.PREF_FIRST_BOOT, false);
 
         finish();
     }

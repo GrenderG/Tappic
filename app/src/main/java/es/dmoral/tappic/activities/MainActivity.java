@@ -7,8 +7,9 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 
-import es.dmoral.tappic.helpers.PreferenceHelper;
+import es.dmoral.prefs.Prefs;
 import es.dmoral.tappic.services.TooltipperService;
+import es.dmoral.tappic.utils.Constants;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -16,10 +17,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (!PreferenceHelper.isPrefsInitialized())
-            PreferenceHelper.initializePrefs(this);
-
-        if (PreferenceHelper.readBoolean(PreferenceHelper.PREF_FIRST_BOOT, true) ||
+        if (Prefs.with(this).readBoolean(Constants.PREF_FIRST_BOOT, true) ||
                 (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)))
             launchOnBoardingScene();
         else {

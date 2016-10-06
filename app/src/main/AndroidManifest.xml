@@ -49,6 +49,9 @@
                 <data android:scheme="http"
                     android:host="*"
                     android:pathPrefix="/images" />
+                <data android:scheme="http"
+                    android:host="*"
+                    android:pathPrefix="/img" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -77,6 +80,9 @@
                 <data android:scheme="https"
                     android:host="*"
                     android:pathPrefix="/images" />
+                <data android:scheme="http"
+                    android:host="*"
+                    android:pathPrefix="/img" />
             </intent-filter>
         </activity>
 
